@@ -1,6 +1,6 @@
 module npm-operator
 
-go 1.23
+go 1.26
 
 require (
   sigs.k8s.io/controller-runtime v0.17.0
