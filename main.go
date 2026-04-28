@@ -7,6 +7,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -28,11 +29,15 @@ func main() {
 	utilruntime.Must(appsv1.AddToScheme(scheme))
 	utilruntime.Must(corev1.AddToScheme(scheme))
 
-    scheme.AddKnownTypes(
-    	v1alpha1.GroupVersion,
-    	&v1alpha1.NpmApp{},
-    	&v1alpha1.NpmAppList{},
-    )
+	// ✅ register CRD types
+	scheme.AddKnownTypes(
+		v1alpha1.GroupVersion,
+		&v1alpha1.NpmApp{},
+		&v1alpha1.NpmAppList{},
+	)
+
+	// ✅ CRITICAL FIX: register meta types for your API group
+	v1.AddToGroupVersion(scheme, v1alpha1.GroupVersion)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
@@ -53,7 +58,7 @@ func main() {
 		panic(err)
 	}
 
-	// ✅ FIXED WATCH (new API)
+	// watch kpack images
 	kpackImage := &unstructured.Unstructured{}
 	kpackImage.SetAPIVersion("kpack.io/v1alpha2")
 	kpackImage.SetKind("Image")
