@@ -1,0 +1,63 @@
+name: Sync from Upstream (Skip .github and .git)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-upstream:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout GitHub repo
+      - name: Checkout GitHub repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Configure git identity
+      - name: Configure Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      # Add upstream remote and fetch
+      - name: Add upstream remote
+        run: |
+          git remote add upstream https://git.centerionware.com/0xdeadc0de/quick-npm-deployer.git
+          git fetch upstream
+
+      # Merge upstream files except .github and .git
+      - name: Merge upstream (skip .github and .git)
+        run: |
+          # Determine upstream default branch
+          UPSTREAM_BRANCH=$(git remote show upstream | grep 'HEAD branch' | awk '{print $NF}')
+          echo "Upstream default branch: $UPSTREAM_BRANCH"
+
+          # Clone upstream into temporary directory
+          TMPDIR=$(mktemp -d)
+          git clone --branch $UPSTREAM_BRANCH --depth 1 https://git.centerionware.com/0xdeadc0de/evmon.git "$TMPDIR"
+
+          # Copy all files except .github and .git
+          rsync -av --exclude='.github' --exclude='.git' "$TMPDIR/" .
+
+          # Clean up
+          rm -rf "$TMPDIR"
+
+          # Stage all changes
+          git add .
+
+          # Commit if there are changes
+          if ! git diff-index --quiet HEAD; then
+            git commit -m "Sync from upstream (skipping .github and .git folders)"
+          else
+            echo "No changes to commit"
+            exit 0
+          fi
+
+      # Push changes to GitHub main
+      - name: Push to GitHub
+        run: |
+          git push origin main
