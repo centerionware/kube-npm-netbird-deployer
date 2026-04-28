@@ -18,10 +18,7 @@ func ensureService(ctx context.Context, c client.Client, app v1.NpmApp) error {
 
 	var svc corev1.Service
 
-	serviceName := app.Spec.Name
-	if serviceName == "" {
-		serviceName = app.Name
-	}
+	serviceName := app.Name // ✅ ONLY source of truth
 
 	err := c.Get(ctx, types.NamespacedName{
 		Name:      serviceName,
@@ -48,7 +45,9 @@ func ensureService(ctx context.Context, c client.Client, app v1.NpmApp) error {
 				},
 			},
 			Spec: corev1.ServiceSpec{
-				Selector: map[string]string{"app": app.Name},
+				Selector: map[string]string{
+					"app": app.Name,
+				},
 				Ports: []corev1.ServicePort{
 					{
 						Port:       80,
@@ -62,6 +61,7 @@ func ensureService(ctx context.Context, c client.Client, app v1.NpmApp) error {
 		return c.Create(ctx, &svc)
 	}
 
+	// update annotations only if changed
 	if !reflect.DeepEqual(svc.Annotations, desiredAnnotations) {
 		svc.Annotations = desiredAnnotations
 		return c.Update(ctx, &svc)
