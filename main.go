@@ -30,32 +30,43 @@ func main() {
 
 	scheme.AddKnownTypes(v1alpha1.GroupVersion, &v1alpha1.NpmApp{})
 
-	mgr, _ := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	reconciler := &controllers.NpmAppReconciler{
 		Client: mgr.GetClient(),
 		Scheme: scheme,
 	}
 
-	c, _ := ctrl.NewControllerManagedBy(mgr).
+	c, err := ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.NpmApp{}).
 		Build(reconciler)
+	if err != nil {
+		panic(err)
+	}
 
-	c.Watch(
-		&source.Kind{Type: &unstructured.Unstructured{
-			Object: map[string]interface{}{
-				"apiVersion": "kpack.io/v1alpha2",
-				"kind":       "Image",
-			},
-		}},
+	// ✅ FIXED WATCH (new API)
+	kpackImage := &unstructured.Unstructured{}
+	kpackImage.SetAPIVersion("kpack.io/v1alpha2")
+	kpackImage.SetKind("Image")
+
+	err = c.Watch(
+		source.Kind(mgr.GetCache(), kpackImage),
 		handler.EnqueueRequestForOwner(
 			mgr.GetScheme(),
 			mgr.GetRESTMapper(),
 			&v1alpha1.NpmApp{},
 		),
 	)
+	if err != nil {
+		panic(err)
+	}
 
-	mgr.Start(ctrl.SetupSignalHandler())
+	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+		panic(err)
+	}
 }

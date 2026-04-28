@@ -3,9 +3,10 @@ package v1alpha1
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-var GroupVersion = metav1.GroupVersion{
+var GroupVersion = schema.GroupVersion{
 	Group:   "npm.centerionware.app",
 	Version: "v1alpha1",
 }
