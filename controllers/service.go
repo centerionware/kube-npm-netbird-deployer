@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"reflect"
 
 	v1 "npm-operator/api/v1alpha1"
 
@@ -22,12 +23,24 @@ func ensureService(ctx context.Context, c client.Client, app v1.NpmApp) error {
 		Namespace: app.Namespace,
 	}, &svc)
 
+	desiredAnnotations := app.Spec.Service.Annotations
+
 	if errors.IsNotFound(err) {
 
 		svc = corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      app.Name,
-				Namespace: app.Namespace,
+				Name:        app.Name,
+				Namespace:   app.Namespace,
+				Annotations: desiredAnnotations,
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						APIVersion: app.APIVersion,
+						Kind:       app.Kind,
+						Name:       app.Name,
+						UID:        app.UID,
+						Controller: boolPtr(true),
+					},
+				},
 			},
 			Spec: corev1.ServiceSpec{
 				Selector: map[string]string{"app": app.Name},
@@ -42,6 +55,11 @@ func ensureService(ctx context.Context, c client.Client, app v1.NpmApp) error {
 		}
 
 		return c.Create(ctx, &svc)
+	}
+
+	if !reflect.DeepEqual(svc.Annotations, desiredAnnotations) {
+		svc.Annotations = desiredAnnotations
+		return c.Update(ctx, &svc)
 	}
 
 	return nil
