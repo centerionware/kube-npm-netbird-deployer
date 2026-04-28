@@ -18,8 +18,13 @@ func ensureService(ctx context.Context, c client.Client, app v1.NpmApp) error {
 
 	var svc corev1.Service
 
+	serviceName := app.Spec.Name
+	if serviceName == "" {
+		serviceName = app.Name
+	}
+
 	err := c.Get(ctx, types.NamespacedName{
-		Name:      app.Spec.Service.Name,
+		Name:      serviceName,
 		Namespace: app.Namespace,
 	}, &svc)
 
@@ -29,7 +34,7 @@ func ensureService(ctx context.Context, c client.Client, app v1.NpmApp) error {
 
 		svc = corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        app.Spec.Service.Name,
+				Name:        serviceName,
 				Namespace:   app.Namespace,
 				Annotations: desiredAnnotations,
 				OwnerReferences: []metav1.OwnerReference{
