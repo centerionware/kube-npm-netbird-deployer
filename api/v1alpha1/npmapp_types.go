@@ -11,9 +11,6 @@ var GroupVersion = schema.GroupVersion{
 	Version: "v1alpha1",
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:subresource:status
-
 type NpmApp struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -27,8 +24,6 @@ func (in *NpmApp) DeepCopyObject() runtime.Object {
 	*out = *in
 	return out
 }
-
-// +kubebuilder:object:root=true
 
 type NpmAppList struct {
 	metav1.TypeMeta `json:",inline"`
@@ -48,12 +43,10 @@ type NpmAppSpec struct {
 	Build   NpmBuildSpec   `json:"build,omitempty"`
 	Run     NpmRunSpec     `json:"run,omitempty"`
 	Service NpmServiceSpec `json:"service,omitempty"`
-
-	Env map[string]string `json:"env,omitempty"`
 }
 
 type NpmBuildSpec struct {
-	BaseImage     string `json:"baseImage,omitempty"`
+	BaseImage      string `json:"baseImage,omitempty"`
 	InstallCommand string `json:"installCommand,omitempty"`
 	BuildCommand   string `json:"buildCommand,omitempty"`
 
@@ -67,8 +60,7 @@ type RegistrySpec struct {
 }
 
 type NpmRunSpec struct {
-	Command string `json:"command,omitempty"`
-	Port    int    `json:"port,omitempty"`
+	Port int `json:"port,omitempty"`
 }
 
 type NpmServiceSpec struct {
@@ -79,4 +71,5 @@ type NpmAppStatus struct {
 	ObservedGeneration int64  `json:"observedGeneration,omitempty"`
 	Image              string `json:"image,omitempty"`
 	Phase              string `json:"phase,omitempty"`
+	JobName            string `json:"jobName,omitempty"`
 }

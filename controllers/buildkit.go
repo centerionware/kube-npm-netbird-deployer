@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	v1 "npm-operator/api/v1alpha1"
 
@@ -14,33 +15,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func resolveImage(app v1.NpmApp) string {
-
-	reg := app.Spec.Build.Registry
-
-	url := reg.URL
-	if url == "" {
-		url = "registry.registry.svc.cluster.local:5000"
-	}
-
-	repo := reg.Repository
-	if repo == "" {
-		repo = "apps"
-	}
-
-	return fmt.Sprintf("%s/%s/%s:latest", url, repo, app.Name)
-}
-
 func ensureBuildJob(ctx context.Context, c client.Client, app v1.NpmApp) (string, error) {
 
 	jobName := app.Name + "-build"
 	image := resolveImage(app)
 
 	var job batchv1.Job
-	err := c.Get(ctx, client.ObjectKey{Name: jobName, Namespace: app.Namespace}, &job)
+	err := c.Get(ctx, client.ObjectKey{
+		Name:      jobName,
+		Namespace: app.Namespace,
+	}, &job)
 
 	if err == nil {
-		// already exists
 		return image, nil
 	}
 
@@ -48,7 +34,7 @@ func ensureBuildJob(ctx context.Context, c client.Client, app v1.NpmApp) (string
 		return "", err
 	}
 
-	// ConfigMap for Dockerfile
+	// Dockerfile
 	dockerfile := generateDockerfile(app)
 
 	cm := corev1.ConfigMap{
@@ -60,41 +46,56 @@ func ensureBuildJob(ctx context.Context, c client.Client, app v1.NpmApp) (string
 			"Dockerfile": dockerfile,
 		},
 	}
-
 	_ = c.Create(ctx, &cm)
 
 	volumes := []corev1.Volume{
 		{
 			Name: "workspace",
-			VolumeSource: corev1.EmptyDirVolumeSource{},
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
 		},
 		{
 			Name: "dockerfile",
-			VolumeSource: corev1.ConfigMapVolumeSource{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: cm.Name,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: cm.Name,
+					},
 				},
 			},
 		},
 	}
 
-	volumeMounts := []corev1.VolumeMount{
-		{Name: "workspace", MountPath: "/workspace"},
-		{Name: "dockerfile", MountPath: "/workspace"},
+	init := corev1.Container{
+		Name:  "git-clone",
+		Image: "alpine/git",
+		Command: []string{
+			"sh",
+			"-c",
+			fmt.Sprintf("git clone %s /workspace", app.Spec.Repo),
+		},
+		VolumeMounts: []corev1.VolumeMount{
+			{Name: "workspace", MountPath: "/workspace"},
+		},
 	}
 
-	container := corev1.Container{
+	build := corev1.Container{
 		Name:  "build",
 		Image: "moby/buildkit:rootless",
 		Command: []string{
 			"buildctl-daemonless.sh",
 			"build",
+			"--progress=plain",
 			"--frontend=dockerfile.v0",
 			"--local=context=/workspace",
 			"--local=dockerfile=/workspace",
-			"--output", fmt.Sprintf("type=image,name=%s,push=true", image),
+			"--output",
+			fmt.Sprintf("type=image,name=%s,push=true", image),
 		},
-		VolumeMounts: volumeMounts,
+		VolumeMounts: []corev1.VolumeMount{
+			{Name: "workspace", MountPath: "/workspace"},
+		},
 	}
 
 	job = batchv1.Job{
@@ -103,11 +104,13 @@ func ensureBuildJob(ctx context.Context, c client.Client, app v1.NpmApp) (string
 			Namespace: app.Namespace,
 		},
 		Spec: batchv1.JobSpec{
+			BackoffLimit: ptrInt32(2),
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
-					RestartPolicy: corev1.RestartPolicyNever,
-					Containers:    []corev1.Container{container},
-					Volumes:       volumes,
+					RestartPolicy:  corev1.RestartPolicyNever,
+					InitContainers: []corev1.Container{init},
+					Containers:     []corev1.Container{build},
+					Volumes:        volumes,
 				},
 			},
 		},
@@ -118,4 +121,8 @@ func ensureBuildJob(ctx context.Context, c client.Client, app v1.NpmApp) (string
 	}
 
 	return image, nil
+}
+
+func ptrInt32(i int32) *int32 {
+	return &i
 }
