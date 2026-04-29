@@ -25,14 +25,16 @@ spec:
           properties:
             spec:
               type: object
-              required: ["name", "repo"]
+              required: ["repo"]
 
               properties:
-                name:
-                  type: string
-
                 repo:
                   type: string
+
+                env:
+                  type: object
+                  additionalProperties:
+                    type: string
 
                 build:
                   type: object
@@ -41,28 +43,39 @@ spec:
                       type: string
                     buildCommand:
                       type: string
+                    output:
+                      type: string   # 🔥 IMPORTANT (used by resolveImage)
 
                 run:
                   type: object
                   properties:
                     command:
-                      type: string
+                      type: array      # ✅ FIXED
+                      items:
+                        type: string
+                    args:
+                      type: array      # ✅ ADDED
+                      items:
+                        type: string
                     port:
                       type: integer
 
                 service:
                   type: object
                   properties:
-                    name:
-                      type: string
-                    port:
-                      type: integer
                     annotations:
                       type: object
                       additionalProperties:
                         type: string
 
-                env:
-                  type: object
-                  additionalProperties:
-                    type: string
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                image:
+                  type: string
+                commit:
+                  type: string
+                lastUpdate:
+                  type: string
