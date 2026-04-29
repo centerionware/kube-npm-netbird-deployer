@@ -11,8 +11,6 @@ var GroupVersion = schema.GroupVersion{
 	Version: "v1alpha1",
 }
 
-// ---------------- ROOT TYPES ----------------
-
 type NpmApp struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -26,8 +24,6 @@ type NpmAppList struct {
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []NpmApp `json:"items"`
 }
-
-// ---------------- REQUIRED K8S INTERFACE ----------------
 
 func (in *NpmApp) DeepCopyObject() runtime.Object {
 	out := new(NpmApp)
@@ -56,14 +52,16 @@ type NpmAppSpec struct {
 }
 
 type NpmBuildSpec struct {
-	BaseImage   string `json:"baseImage,omitempty"`
-	InstallCmd  string `json:"installCmd,omitempty"`
-	BuildCmd    string `json:"buildCmd,omitempty"`
-	OutputImage string `json:"outputImage,omitempty"`
+	BaseImage  string   `json:"baseImage,omitempty"`
+	InstallCmd string   `json:"installCmd,omitempty"`
+	BuildCmd   string   `json:"buildCmd,omitempty"`
+	Output     string   `json:"output,omitempty"`
+	Args       []string `json:"args,omitempty"`
 }
 
 type NpmRunSpec struct {
 	Command []string `json:"command,omitempty"`
+	Args    []string `json:"args,omitempty"`
 	Port    int      `json:"port,omitempty"`
 }
 
@@ -74,7 +72,9 @@ type NpmServiceSpec struct {
 // ---------------- STATUS ----------------
 
 type NpmAppStatus struct {
-	Phase   string `json:"phase,omitempty"`
-	Image   string `json:"image,omitempty"`
-	JobName string `json:"jobName,omitempty"`
+	Phase      string `json:"phase,omitempty"`
+	Image      string `json:"image,omitempty"`
+	Build      string `json:"build,omitempty"`
+	Commit     string `json:"commit,omitempty"`
+	LastUpdate string `json:"lastUpdate,omitempty"`
 }

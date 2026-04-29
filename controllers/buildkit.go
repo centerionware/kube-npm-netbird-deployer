@@ -1,62 +1,67 @@
 package controllers
 
 import (
-	"strings"
+	"context"
+	"fmt"
+	"time"
 
 	v1 "npm-operator/api/v1alpha1"
+
+	batchv1 "k8s.io/api/batch/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func generateDockerfile(app v1.NpmApp) string {
+func EnsureBuild(ctx context.Context, c client.Client, app *v1.NpmApp) (string, bool, error) {
 
-	base := "node:20-alpine"
-	if app.Spec.Build.BaseImage != "" {
-		base = app.Spec.Build.BaseImage
+	commit, err := getLatestCommit(app.Spec.Repo)
+	if err != nil {
+		return "", false, err
 	}
 
-	install := "pnpm install"
-	if app.Spec.Build.InstallCmd != "" {
-		install = app.Spec.Build.InstallCmd
+	// already built
+	if app.Status.Commit == commit && app.Status.Phase == "Ready" {
+		return app.Status.Image, true, nil
 	}
 
-	build := "pnpm build"
-	if app.Spec.Build.BuildCmd != "" {
-		build = app.Spec.Build.BuildCmd
+	image := fmt.Sprintf("%s:%s", resolveImage(*app), commit[:7])
+	jobName := fmt.Sprintf("%s-build-%s", app.Name, commit[:7])
+
+	var job batchv1.Job
+	err = c.Get(ctx, client.ObjectKey{
+		Namespace: app.Namespace,
+		Name:      jobName,
+	}, &job)
+
+	if err != nil {
+		// create job
+		if err := c.Create(ctx, &buildJob(app, jobName, image)); err != nil {
+			return "", false, err
+		}
+
+		updateStatus(ctx, c, app, "Building", commit, image)
+		return "", false, nil
 	}
 
-	cmd := formatCmd(app.Spec.Run.Command)
-	if cmd == "" {
-		cmd = `["node","server.js"]`
+	// check job status
+	if job.Status.Succeeded > 0 {
+		updateStatus(ctx, c, app, "Ready", commit, image)
+		return image, true, nil
 	}
 
-	return strings.TrimSpace(`
-FROM ` + base + `
-WORKDIR /app
-COPY . .
+	if job.Status.Failed > 0 {
+		updateStatus(ctx, c, app, "Failed", commit, "")
+		return "", false, fmt.Errorf("build failed")
+	}
 
-RUN ` + install + `
-RUN ` + build + `
-
-CMD ` + cmd + `
-`)
+	// still building
+	return "", false, nil
 }
 
-// ---------------- LOCAL HELPER (ONLY USED HERE) ----------------
+func updateStatus(ctx context.Context, c client.Client, app *v1.NpmApp, phase, commit, image string) {
+	app.Status.Phase = phase
+	app.Status.Commit = commit
+	app.Status.Image = image
+	app.Status.LastUpdate = time.Now().Format(time.RFC3339)
 
-func formatCmd(cmd []string) string {
-	if len(cmd) == 0 {
-		return ""
-	}
-
-	var b strings.Builder
-	b.WriteString("[")
-
-	for i, c := range cmd {
-		b.WriteString(`"` + c + `"`)
-		if i < len(cmd)-1 {
-			b.WriteString(",")
-		}
-	}
-
-	b.WriteString("]")
-	return b.String()
+	_ = c.Status().Update(ctx, app)
 }
