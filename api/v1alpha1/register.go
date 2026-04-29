@@ -6,11 +6,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var GroupVersion = schema.GroupVersion{
-	Group:   "npm.centerionware.app",
-	Version: "v1alpha1",
-}
-
 var SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
 var AddToScheme = SchemeBuilder.AddToScheme
 
