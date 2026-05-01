@@ -48,7 +48,10 @@ metadata:
 spec:
   name: meet
   repo: https://github.com/livekit-examples/meet
-
+  env:
+    LIVEKIT_API_KEY:
+    LIVEKIT_API_SECRET:
+    LIVEKIT_URL:ws://
   service:
     name: meet
     annotations:

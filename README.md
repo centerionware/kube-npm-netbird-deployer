@@ -7,6 +7,6 @@ basically a cloudflare worker/vercel highly focused self hosted alternative
 
 current status:
 * not working, in development
-* operator runs without error but does not progress through the stages
-* git is implemented wrong, tries to use git cli app inside a from scratch container that only contains operator binary
-* logging needs to be extended and add logging configuration environment variable
+* operator runs without error
+* Build stage job runs, initial target has build errors
+* unknown how if it progresses on successful build at this moment 

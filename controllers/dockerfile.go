@@ -13,7 +13,7 @@ func generateDockerfile(app v1.NpmApp) string {
 		base = app.Spec.Build.BaseImage
 	}
 
-	install := "npm install"
+	install := "npm install --legacy-peer-deps --prefer-offline"
 	if app.Spec.Build.InstallCmd != "" {
 		install = app.Spec.Build.InstallCmd
 	}
