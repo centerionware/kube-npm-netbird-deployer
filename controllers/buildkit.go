@@ -12,6 +12,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+const defaultRegistry = "registry.registry.svc.cluster.local:5000"
+
 func EnsureBuild(ctx context.Context, c client.Client, app *v1.NpmApp) (string, bool, error) {
 	log := log.FromContext(ctx).WithValues("npmapp", app.Name, "namespace", app.Namespace)
 
@@ -68,11 +70,17 @@ func EnsureBuild(ctx context.Context, c client.Client, app *v1.NpmApp) (string, 
 }
 
 func resolveImage(app v1.NpmApp, commit string) string {
-	base := app.Spec.Build.Output
-	if base == "" {
-		base = "registry.local/" + app.Name
+	// Explicit output override takes priority
+	if app.Spec.Build.Output != "" {
+		return fmt.Sprintf("%s:%s", app.Spec.Build.Output, commit[:7])
 	}
-	return fmt.Sprintf("%s:%s", base, commit[:7])
+
+	registry := app.Spec.Registry
+	if registry == "" {
+		registry = defaultRegistry
+	}
+
+	return fmt.Sprintf("%s/%s:%s", registry, app.Name, commit[:7])
 }
 
 func updateStatus(ctx context.Context, c client.Client, app *v1.NpmApp, phase, commit, image string) {

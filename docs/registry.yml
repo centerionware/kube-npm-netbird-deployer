@@ -6,11 +6,6 @@ kind: Namespace
 metadata:
   name: registry
 ---
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: platform
-
 ############################################
 # STORAGE (10Gi, local-path)
 ############################################
@@ -26,7 +21,7 @@ spec:
   resources:
     requests:
       storage: 10Gi
-
+---
 ############################################
 # DOCKER REGISTRY
 # :contentReference[oaicite:0]{index=0}
@@ -74,7 +69,7 @@ spec:
     - port: 5000
       targetPort: 5000
   type: ClusterIP
-
+---
 ############################################
 # REGISTRY CLEANUP CRONJOB
 ############################################

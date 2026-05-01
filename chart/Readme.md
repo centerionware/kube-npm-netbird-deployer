@@ -43,17 +43,19 @@ apiVersion: npm.centerionware.app/v1alpha1
 kind: NpmApp
 metadata:
   name: meet
-  namespace: apps
-
+  namespace: npm-deployer
 spec:
-  name: meet
   repo: https://github.com/livekit-examples/meet
+  build:
+    installCmd: pnpm install
+    buildCmd: pnpm build
+  run:
+    command: ["pnpm", "start"]
   env:
-    LIVEKIT_API_KEY:
-    LIVEKIT_API_SECRET:
-    LIVEKIT_URL:ws://
+    LIVEKIT_API_KEY: "your-key"
+    LIVEKIT_API_SECRET: "your-secret"
+    LIVEKIT_URL: "ws://your-livekit-url"
   service:
-    name: meet
     annotations:
       netbird.io/expose: "true"
       netbird.io/groups: "media"

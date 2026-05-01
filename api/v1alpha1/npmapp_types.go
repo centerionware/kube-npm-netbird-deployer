@@ -40,14 +40,13 @@ func (in *NpmAppList) DeepCopyObject() runtime.Object {
 // ---------------- SPEC ----------------
 
 type NpmAppSpec struct {
-	Repo string `json:"repo"`
+	Repo     string `json:"repo"`
+	Registry string `json:"registry,omitempty"`
 
 	Env map[string]string `json:"env,omitempty"`
 
 	Build NpmBuildSpec `json:"build,omitempty"`
-
-	Run NpmRunSpec `json:"run,omitempty"`
-
+	Run   NpmRunSpec   `json:"run,omitempty"`
 	Service NpmServiceSpec `json:"service,omitempty"`
 }
 
