@@ -1,21 +1,30 @@
 package controllers
 
 import (
-	"os/exec"
-	"strings"
+	"fmt"
+
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/config"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/storage/memory"
 )
 
 func getLatestCommit(repo string) (string, error) {
+	rem := git.NewRemote(memory.NewStorage(), &config.RemoteConfig{
+		Name: "origin",
+		URLs: []string{repo},
+	})
 
-	out, err := exec.Command("git", "ls-remote", repo, "HEAD").Output()
+	refs, err := rem.List(&git.ListOptions{})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("listing remote refs for %s: %w", repo, err)
 	}
 
-	parts := strings.Fields(string(out))
-	if len(parts) == 0 {
-		return "", nil
+	for _, ref := range refs {
+		if ref.Name() == plumbing.HEAD {
+			return ref.Hash().String(), nil
+		}
 	}
 
-	return parts[0], nil
+	return "", fmt.Errorf("HEAD not found in %s", repo)
 }

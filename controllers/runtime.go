@@ -10,12 +10,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func EnsureRuntime(ctx context.Context, c client.Client, app *v1.NpmApp, image string) error {
+	log := log.FromContext(ctx).WithValues("npmapp", app.Name, "namespace", app.Namespace)
 
 	labels := map[string]string{"app": app.Name}
 
+	log.Info("upserting deployment", "image", image, "port", app.Spec.Run.Port)
 	deploy := appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      app.Name,
@@ -54,8 +57,13 @@ func EnsureRuntime(ctx context.Context, c client.Client, app *v1.NpmApp, image s
 		},
 	}
 
-	_ = upsertDeployment(ctx, c, deploy)
+	if err := upsertDeployment(ctx, c, deploy); err != nil {
+		log.Error(err, "failed to upsert deployment", "image", image)
+		return err
+	}
+	log.Info("deployment upserted", "image", image)
 
+	log.Info("upserting service", "port", app.Spec.Run.Port, "annotations", app.Spec.Service.Annotations)
 	svc := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        app.Name,
@@ -70,5 +78,11 @@ func EnsureRuntime(ctx context.Context, c client.Client, app *v1.NpmApp, image s
 		},
 	}
 
-	return upsertService(ctx, c, svc)
+	if err := upsertService(ctx, c, svc); err != nil {
+		log.Error(err, "failed to upsert service", "port", app.Spec.Run.Port)
+		return err
+	}
+	log.Info("service upserted", "port", app.Spec.Run.Port)
+
+	return nil
 }

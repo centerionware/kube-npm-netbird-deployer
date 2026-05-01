@@ -11,15 +11,26 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func ensureBuildJob(ctx context.Context, c client.Client, app *v1.NpmApp, name string, image string) error {
+	log := log.FromContext(ctx).WithValues("npmapp", app.Name, "namespace", app.Namespace, "job", name)
+
+	log.Info("generating dockerfile for job")
 	job := buildJob(app, name, image)
-	return c.Create(ctx, &job)
+
+	log.Info("submitting build job", "image", image, "repo", app.Spec.Repo)
+	if err := c.Create(ctx, &job); err != nil {
+		log.Error(err, "failed to create build job")
+		return err
+	}
+
+	log.Info("build job submitted successfully", "job", name)
+	return nil
 }
 
 func buildJob(app *v1.NpmApp, name string, image string) batchv1.Job {
-
 	dockerfile := generateDockerfile(*app)
 
 	return batchv1.Job{
@@ -32,7 +43,6 @@ func buildJob(app *v1.NpmApp, name string, image string) batchv1.Job {
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					RestartPolicy: corev1.RestartPolicyNever,
-
 					Volumes: []corev1.Volume{
 						{
 							Name: "workspace",
@@ -41,7 +51,6 @@ func buildJob(app *v1.NpmApp, name string, image string) batchv1.Job {
 							},
 						},
 					},
-
 					InitContainers: []corev1.Container{
 						{
 							Name:  "git-clone",
@@ -66,7 +75,6 @@ func buildJob(app *v1.NpmApp, name string, image string) batchv1.Job {
 							},
 						},
 					},
-
 					Containers: []corev1.Container{
 						{
 							Name:    "buildkit",
