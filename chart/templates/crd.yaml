@@ -27,12 +27,10 @@ spec:
       schema:
         openAPIV3Schema:
           type: object
-
           properties:
             spec:
               type: object
               required: ["repo"]
-
               properties:
                 repo:
                   type: string
@@ -44,50 +42,59 @@ spec:
 
                 build:
                   type: object
+                  default: {}
                   properties:
                     baseImage:
                       type: string
+                      default: "node:20-alpine"
                     installCmd:
                       type: string
+                      default: "npm install --legacy-peer-deps"
                     buildCmd:
                       type: string
+                      default: "npm run build"
                     output:
                       type: string
+                      default: ""
                     args:
                       type: array
                       items:
                         type: string
+                      default: []
                     registry:
                       type: string
                       default: "registry.registry.svc.cluster.local:5000"
-                      description: "Registry to push built images to. Must be reachable from buildkitd."
 
                 run:
                   type: object
+                  default: {}
                   properties:
                     command:
                       type: array
                       items:
                         type: string
+                      default: ["npm", "start"]
                     args:
                       type: array
                       items:
                         type: string
+                      default: []
                     port:
                       type: integer
                       default: 3000
                     registry:
                       type: string
                       default: "localhost:31999"
-                      description: "Registry to pull images from. Must be reachable from containerd on cluster nodes."
 
                 service:
                   type: object
+                  default: {}
                   properties:
                     annotations:
                       type: object
                       additionalProperties:
                         type: string
+                      default: {}
 
             status:
               type: object

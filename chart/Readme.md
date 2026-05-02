@@ -46,7 +46,6 @@ metadata:
   namespace: npm-deployer
 spec:
   repo: https://github.com/livekit-examples/meet
-  registry: registry.registry.svc.cluster.local:5000
   # build:
   #  installCmd: pnpm install
   #  buildCmd: pnpm build
