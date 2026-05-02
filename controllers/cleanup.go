@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	v1 "npm-operator/api/v1alpha1"
+	v1 "kube-deploy/api/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv2 "k8s.io/api/autoscaling/v2"

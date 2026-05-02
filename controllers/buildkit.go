@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	v1 "npm-operator/api/v1alpha1"
+	v1 "kube-deploy/api/v1alpha1"
 
 	batchv1 "k8s.io/api/batch/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -18,7 +18,7 @@ const (
 	defaultPullRegistry  = "localhost:31999"
 )
 
-func EnsureBuild(ctx context.Context, c client.Client, app *v1.NpmApp) (string, bool, error) {
+func EnsureBuild(ctx context.Context, c client.Client, app *v1.App) (string, bool, error) {
 	log := log.FromContext(ctx).WithValues("npmapp", app.Name, "namespace", app.Namespace)
 
 	log.Info("checking latest commit", "repo", app.Spec.Repo)
@@ -92,7 +92,7 @@ func EnsureBuild(ctx context.Context, c client.Client, app *v1.NpmApp) (string, 
 
 // resolvePushImage returns the image ref buildkitd uses to push.
 // Includes namespace to prevent collisions across namespaces.
-func resolvePushImage(app v1.NpmApp, commit string) string {
+func resolvePushImage(app v1.App, commit string) string {
 	if app.Spec.Build.Output != "" {
 		return fmt.Sprintf("%s:%s", app.Spec.Build.Output, commit[:7])
 	}
@@ -105,7 +105,7 @@ func resolvePushImage(app v1.NpmApp, commit string) string {
 
 // resolvePullImage returns the image ref written into the Deployment.
 // Uses run.registry — reachable from containerd on cluster nodes.
-func resolvePullImage(app v1.NpmApp, commit string) string {
+func resolvePullImage(app v1.App, commit string) string {
 	buildRegistry := app.Spec.Build.Registry
 	if buildRegistry == "" {
 		buildRegistry = defaultBuildRegistry
@@ -118,7 +118,7 @@ func resolvePullImage(app v1.NpmApp, commit string) string {
 	return strings.Replace(pushImage, buildRegistry, pullRegistry, 1)
 }
 
-func updateStatus(ctx context.Context, c client.Client, app *v1.NpmApp, phase, commit, image string) {
+func updateStatus(ctx context.Context, c client.Client, app *v1.App, phase, commit, image string) {
 	log := log.FromContext(ctx).WithValues("npmapp", app.Name, "namespace", app.Namespace)
 	log.Info("updating status", "phase", phase, "commit", commit, "image", image)
 

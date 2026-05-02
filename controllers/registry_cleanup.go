@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	v1 "npm-operator/api/v1alpha1"
+	v1 "kube-deploy/api/v1alpha1"
 )
 
 // deleteRegistryImage deletes the image for this app from the registry via the HTTP API.

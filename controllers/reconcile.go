@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	v1 "npm-operator/api/v1alpha1"
+	v1 "kube-deploy/api/v1alpha1"
 
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"

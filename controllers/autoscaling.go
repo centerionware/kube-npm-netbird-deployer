@@ -3,7 +3,7 @@ package controllers
 import (
 	"context"
 
-	v1 "npm-operator/api/v1alpha1"
+	v1 "kube-deploy/api/v1alpha1"
 
 	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-func EnsureHPA(ctx context.Context, c client.Client, app *v1.NpmApp) error {
+func EnsureHPA(ctx context.Context, c client.Client, app *v1.App) error {
 	log := log.FromContext(ctx).WithValues("npmapp", app.Name, "namespace", app.Namespace)
 
 	if app.Spec.Run.Autoscaling == nil || !app.Spec.Run.Autoscaling.Enabled {

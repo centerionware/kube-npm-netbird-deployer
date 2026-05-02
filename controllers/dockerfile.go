@@ -3,7 +3,7 @@ package controllers
 import (
 	"strings"
 
-	v1 "npm-operator/api/v1alpha1"
+	v1 "kube-deploy/api/v1alpha1"
 )
 
 func generateDockerfile(app v1.NpmApp) string {
