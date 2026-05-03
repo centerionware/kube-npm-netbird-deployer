@@ -299,6 +299,30 @@ service:
     netbird.io/expose: "true"
     netbird.io/groups: "media"
 ```
+
+## RBAC
+
+```
+rbac:
+  roles:
+    - name: livekit-configmap-reader
+      rules:
+        - apiGroups: [""]
+          resources: ["configmaps"]
+          verbs: ["get", "list", "watch"]
+  clusterRoles:
+    - name: livekit-node-reader
+      rules:
+        - apiGroups: [""]
+          resources: ["nodes"]
+          verbs: ["get", "list"]
+  clusterRoleBindings:
+    - "view"  # bind existing ClusterRole
+```
+
+This creates: a ServiceAccount named livekit, a Role livekit-configmap-reader + RoleBinding, a ClusterRole kube-deploy-livekit-livekit-node-reader + ClusterRoleBinding, and binds the existing view ClusterRole — all cleaned up on deletion.
+
+
 ## Use of AI Disclaimer
 
 ChatGPT was originally used to generate the skeleton of this project. Claude Sonnet 4.6 was used to get it into it's current state. 
