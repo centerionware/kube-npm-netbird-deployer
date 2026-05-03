@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	v1 "kube-deploy/api/v1alpha1"
 
@@ -83,7 +84,7 @@ func EnsureGateway(ctx context.Context, c client.Client, app *v1.App, port int32
 		})
 	}
 
-	route := gatewayv1.HTTPRoute{
+	desired := gatewayv1.HTTPRoute{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        app.Name,
 			Namespace:   app.Namespace,
@@ -99,20 +100,27 @@ func EnsureGateway(ctx context.Context, c client.Client, app *v1.App, port int32
 	}
 
 	var existing gatewayv1.HTTPRoute
-	err := c.Get(ctx, client.ObjectKeyFromObject(&route), &existing)
+	err := c.Get(ctx, client.ObjectKeyFromObject(&desired), &existing)
 	if errors.IsNotFound(err) {
 		log.Info("creating HTTPRoute",
 			"gateway", fmt.Sprintf("%s/%s", gwNamespace, gw.GatewayRef.Name),
 			"hostnames", gw.Hostnames,
 		)
-		return c.Create(ctx, &route)
+		return c.Create(ctx, &desired)
 	}
 	if err != nil {
 		return err
 	}
-	log.Info("updating HTTPRoute", "gateway", gw.GatewayRef.Name)
-	route.ResourceVersion = existing.ResourceVersion
-	return c.Update(ctx, &route)
+
+	if reflect.DeepEqual(existing.Spec, desired.Spec) &&
+		reflect.DeepEqual(existing.Annotations, desired.Annotations) {
+		log.Info("HTTPRoute unchanged, skipping update")
+		return nil
+	}
+
+	log.Info("HTTPRoute changed, updating", "gateway", gw.GatewayRef.Name)
+	desired.ResourceVersion = existing.ResourceVersion
+	return c.Update(ctx, &desired)
 }
 
 func deleteHTTPRoute(ctx context.Context, c client.Client, name, namespace string) error {

@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"reflect"
 
 	v1 "kube-deploy/api/v1alpha1"
 
@@ -39,7 +40,7 @@ func EnsureHPA(ctx context.Context, c client.Client, app *v1.App) error {
 		cpuTarget = int32(as.CPUTarget)
 	}
 
-	hpa := autoscalingv2.HorizontalPodAutoscaler{
+	desired := autoscalingv2.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      app.Name,
 			Namespace: app.Namespace,
@@ -68,15 +69,21 @@ func EnsureHPA(ctx context.Context, c client.Client, app *v1.App) error {
 	}
 
 	var existing autoscalingv2.HorizontalPodAutoscaler
-	err := c.Get(ctx, client.ObjectKeyFromObject(&hpa), &existing)
+	err := c.Get(ctx, client.ObjectKeyFromObject(&desired), &existing)
 	if errors.IsNotFound(err) {
 		log.Info("creating HPA", "min", minReplicas, "max", maxReplicas, "cpuTarget", cpuTarget)
-		return c.Create(ctx, &hpa)
+		return c.Create(ctx, &desired)
 	}
 	if err != nil {
 		return err
 	}
-	log.Info("updating HPA", "min", minReplicas, "max", maxReplicas, "cpuTarget", cpuTarget)
-	hpa.ResourceVersion = existing.ResourceVersion
-	return c.Update(ctx, &hpa)
+
+	if reflect.DeepEqual(existing.Spec, desired.Spec) {
+		log.Info("HPA unchanged, skipping update")
+		return nil
+	}
+
+	log.Info("HPA changed, updating", "min", minReplicas, "max", maxReplicas, "cpuTarget", cpuTarget)
+	desired.ResourceVersion = existing.ResourceVersion
+	return c.Update(ctx, &desired)
 }

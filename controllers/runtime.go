@@ -166,16 +166,15 @@ func EnsureRuntime(ctx context.Context, c client.Client, app *v1.App, image stri
 	}
 	log.Info("service upserted", "type", svc.Spec.Type)
 
-	if app.Spec.Gateway != nil && app.Spec.Gateway.Enabled {
-		if err := EnsureGateway(ctx, c, app, port); err != nil {
-			log.Error(err, "failed to upsert HTTPRoute")
-			return err
-		}
-	} else {
-		if err := EnsureIngress(ctx, c, app, port); err != nil {
-			log.Error(err, "failed to upsert ingress")
-			return err
-		}
+	// Always call both — each handles its own cleanup when disabled.
+	// This ensures switching between ingress and gateway cleans up the other.
+	if err := EnsureIngress(ctx, c, app, port); err != nil {
+		log.Error(err, "failed to reconcile ingress")
+		return err
+	}
+	if err := EnsureGateway(ctx, c, app, port); err != nil {
+		log.Error(err, "failed to reconcile HTTPRoute")
+		return err
 	}
 
 	if err := EnsureVolumes(ctx, c, app); err != nil {

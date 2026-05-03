@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"reflect"
 
 	v1 "kube-deploy/api/v1alpha1"
 
@@ -51,7 +52,7 @@ func EnsureIngress(ctx context.Context, c client.Client, app *v1.App, port int32
 		})
 	}
 
-	ing := networkingv1.Ingress{
+	desired := networkingv1.Ingress{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        app.Name,
 			Namespace:   app.Namespace,
@@ -71,21 +72,28 @@ func EnsureIngress(ctx context.Context, c client.Client, app *v1.App, port int32
 	}
 
 	if app.Spec.Ingress.TLSSecret != "" {
-		ing.Spec.TLS = []networkingv1.IngressTLS{
+		desired.Spec.TLS = []networkingv1.IngressTLS{
 			{Hosts: []string{app.Spec.Ingress.Host}, SecretName: app.Spec.Ingress.TLSSecret},
 		}
 	}
 
 	var existing networkingv1.Ingress
-	err := c.Get(ctx, client.ObjectKeyFromObject(&ing), &existing)
+	err := c.Get(ctx, client.ObjectKeyFromObject(&desired), &existing)
 	if errors.IsNotFound(err) {
 		log.Info("creating ingress", "host", app.Spec.Ingress.Host)
-		return c.Create(ctx, &ing)
+		return c.Create(ctx, &desired)
 	}
 	if err != nil {
 		return err
 	}
-	log.Info("updating ingress", "host", app.Spec.Ingress.Host)
-	ing.ResourceVersion = existing.ResourceVersion
-	return c.Update(ctx, &ing)
+
+	if reflect.DeepEqual(existing.Spec, desired.Spec) &&
+		reflect.DeepEqual(existing.Annotations, desired.Annotations) {
+		log.Info("ingress unchanged, skipping update")
+		return nil
+	}
+
+	log.Info("ingress changed, updating", "host", app.Spec.Ingress.Host)
+	desired.ResourceVersion = existing.ResourceVersion
+	return c.Update(ctx, &desired)
 }
