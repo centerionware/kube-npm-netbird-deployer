@@ -361,6 +361,85 @@ spec:
                       type: object
                       additionalProperties:
                         type: string
+                rbac:
+                  type: object
+                  description: "Full RBAC chain â€” creates ServiceAccount, Roles, ClusterRoles and bindings"
+                  properties:
+                    serviceAccountName:
+                      type: string
+                      description: "Override ServiceAccount name (defaults to app name)"
+                    roles:
+                      type: array
+                      description: "Namespace-scoped Roles to CREATE and bind to the ServiceAccount"
+                      items:
+                        type: object
+                        required: ["name", "rules"]
+                        properties:
+                          name:
+                            type: string
+                          rules:
+                            type: array
+                            items:
+                              type: object
+                              required: ["apiGroups", "resources", "verbs"]
+                              properties:
+                                apiGroups:
+                                  type: array
+                                  items:
+                                    type: string
+                                resources:
+                                  type: array
+                                  items:
+                                    type: string
+                                verbs:
+                                  type: array
+                                  items:
+                                    type: string
+                                resourceNames:
+                                  type: array
+                                  items:
+                                    type: string
+                    clusterRoles:
+                      type: array
+                      description: "ClusterRoles to CREATE and bind to the ServiceAccount"
+                      items:
+                        type: object
+                        required: ["name", "rules"]
+                        properties:
+                          name:
+                            type: string
+                          rules:
+                            type: array
+                            items:
+                              type: object
+                              required: ["apiGroups", "resources", "verbs"]
+                              properties:
+                                apiGroups:
+                                  type: array
+                                  items:
+                                    type: string
+                                resources:
+                                  type: array
+                                  items:
+                                    type: string
+                                verbs:
+                                  type: array
+                                  items:
+                                    type: string
+                                resourceNames:
+                                  type: array
+                                  items:
+                                    type: string
+                    roleBindings:
+                      type: array
+                      description: "Names of EXISTING namespace Roles to bind to the ServiceAccount"
+                      items:
+                        type: string
+                    clusterRoleBindings:
+                      type: array
+                      description: "Names of EXISTING ClusterRoles to bind to the ServiceAccount e.g. [cluster-admin]"
+                      items:
+                        type: string
             status:
               type: object
               x-kubernetes-preserve-unknown-fields: true
@@ -685,6 +764,85 @@ spec:
                     annotations:
                       type: object
                       additionalProperties:
+                        type: string
+                rbac:
+                  type: object
+                  description: "Full RBAC chain â€” creates ServiceAccount, Roles, ClusterRoles and bindings"
+                  properties:
+                    serviceAccountName:
+                      type: string
+                      description: "Override ServiceAccount name (defaults to app name)"
+                    roles:
+                      type: array
+                      description: "Namespace-scoped Roles to CREATE and bind to the ServiceAccount"
+                      items:
+                        type: object
+                        required: ["name", "rules"]
+                        properties:
+                          name:
+                            type: string
+                          rules:
+                            type: array
+                            items:
+                              type: object
+                              required: ["apiGroups", "resources", "verbs"]
+                              properties:
+                                apiGroups:
+                                  type: array
+                                  items:
+                                    type: string
+                                resources:
+                                  type: array
+                                  items:
+                                    type: string
+                                verbs:
+                                  type: array
+                                  items:
+                                    type: string
+                                resourceNames:
+                                  type: array
+                                  items:
+                                    type: string
+                    clusterRoles:
+                      type: array
+                      description: "ClusterRoles to CREATE and bind to the ServiceAccount"
+                      items:
+                        type: object
+                        required: ["name", "rules"]
+                        properties:
+                          name:
+                            type: string
+                          rules:
+                            type: array
+                            items:
+                              type: object
+                              required: ["apiGroups", "resources", "verbs"]
+                              properties:
+                                apiGroups:
+                                  type: array
+                                  items:
+                                    type: string
+                                resources:
+                                  type: array
+                                  items:
+                                    type: string
+                                verbs:
+                                  type: array
+                                  items:
+                                    type: string
+                                resourceNames:
+                                  type: array
+                                  items:
+                                    type: string
+                    roleBindings:
+                      type: array
+                      description: "Names of EXISTING namespace Roles to bind to the ServiceAccount"
+                      items:
+                        type: string
+                    clusterRoleBindings:
+                      type: array
+                      description: "Names of EXISTING ClusterRoles to bind to the ServiceAccount e.g. [cluster-admin]"
+                      items:
                         type: string
             status:
               type: object

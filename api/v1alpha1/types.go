@@ -50,6 +50,7 @@ type AppSpec struct {
 	Service        ServiceSpec       `json:"service,omitempty"`
 	Ingress        *IngressSpec      `json:"ingress,omitempty"`
 	Gateway        *GatewaySpec      `json:"gateway,omitempty"`
+	RBAC           *RBACSpec         `json:"rbac,omitempty"`
 }
 
 // ----------------------------------------------------------------
@@ -89,6 +90,7 @@ type ContainerAppSpec struct {
 	Service ServiceSpec       `json:"service,omitempty"`
 	Ingress *IngressSpec      `json:"ingress,omitempty"`
 	Gateway *GatewaySpec      `json:"gateway,omitempty"`
+	RBAC    *RBACSpec         `json:"rbac,omitempty"`
 }
 
 type ContainerAppStatus struct {
@@ -133,6 +135,8 @@ type RunSpec struct {
 	Registry        string           `json:"registry,omitempty"`
 	ImagePullSecret string           `json:"imagePullSecret,omitempty"`
 	HostNetwork     bool             `json:"hostNetwork,omitempty"`
+	// ServiceAccountName to use for the pod. If rbac is set, defaults to app name.
+	ServiceAccountName string          `json:"serviceAccountName,omitempty"`
 	Resources       ResourceSpec     `json:"resources,omitempty"`
 	HealthCheck     HealthCheckSpec  `json:"healthCheck,omitempty"`
 	Volumes         []VolumeSpec     `json:"volumes,omitempty"`
@@ -221,6 +225,27 @@ type AutoscalingSpec struct {
 	MinReplicas int  `json:"minReplicas,omitempty"`
 	MaxReplicas int  `json:"maxReplicas,omitempty"`
 	CPUTarget   int  `json:"cpuTarget,omitempty"`
+}
+
+// ----------------------------------------------------------------
+// RBAC
+// ----------------------------------------------------------------
+
+// RBACSpec defines ServiceAccount, Role, and optional ClusterRole binding for the app pod.
+type RBACSpec struct {
+	// ServiceAccountName overrides the default (app name)
+	ServiceAccountName string     `json:"serviceAccountName,omitempty"`
+	// Rules defines namespace-scoped RBAC rules (creates a Role + RoleBinding)
+	Rules              []RBACRule `json:"rules,omitempty"`
+	// ClusterRoleName binds an existing ClusterRole to this app's ServiceAccount
+	ClusterRoleName    string     `json:"clusterRoleName,omitempty"`
+}
+
+type RBACRule struct {
+	APIGroups     []string `json:"apiGroups"`
+	Resources     []string `json:"resources"`
+	Verbs         []string `json:"verbs"`
+	ResourceNames []string `json:"resourceNames,omitempty"`
 }
 
 // ----------------------------------------------------------------

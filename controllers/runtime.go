@@ -121,9 +121,10 @@ func EnsureRuntime(ctx context.Context, c client.Client, app *v1.App, image stri
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{Labels: podLabels},
 				Spec: corev1.PodSpec{
-					ImagePullSecrets: imagePullSecrets,
-					HostNetwork:      app.Spec.Run.HostNetwork,
-					Volumes:          volumes,
+					ImagePullSecrets:  imagePullSecrets,
+					HostNetwork:       app.Spec.Run.HostNetwork,
+					ServiceAccountName: resolveServiceAccountName(app),
+					Volumes:           volumes,
 					Containers: []corev1.Container{
 						{
 							Name:           "app",
@@ -166,6 +167,11 @@ func EnsureRuntime(ctx context.Context, c client.Client, app *v1.App, image stri
 	}
 	if err := EnsureGateway(ctx, c, app, port); err != nil {
 		log.Error(err, "failed to reconcile HTTPRoute")
+		return err
+	}
+
+	if err := EnsureRBAC(ctx, c, app); err != nil {
+		log.Error(err, "failed to ensure service account")
 		return err
 	}
 
@@ -286,4 +292,18 @@ func buildService(app *v1.App, defaultPort int32) corev1.Service {
 		},
 		Spec: svcSpec,
 	}
+}
+
+// resolveServiceAccountName returns the service account name for the pod.
+func resolveServiceAccountName(app *v1.App) string {
+	if app.Spec.Run.ServiceAccountName != "" {
+		return app.Spec.Run.ServiceAccountName
+	}
+	if app.Spec.RBAC != nil {
+		if app.Spec.RBAC.ServiceAccountName != "" {
+			return app.Spec.RBAC.ServiceAccountName
+		}
+		return app.Name // auto-created SA named after the app
+	}
+	return "" // use default SA
 }

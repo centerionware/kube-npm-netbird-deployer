@@ -163,6 +163,10 @@ func (r *AppReconciler) cleanup(ctx context.Context, app *v1.App) error {
 		}
 	}
 
+	if err := cleanupRBAC(ctx, r.Client, app); err != nil {
+		log.Error(err, "RBAC cleanup failed (best-effort)")
+	}
+
 	if err := deleteRegistryImage(ctx, app); err != nil {
 		log.Error(err, "registry cleanup failed (best-effort)")
 	}

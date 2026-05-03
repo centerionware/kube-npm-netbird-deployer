@@ -12,6 +12,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -31,6 +32,7 @@ func init() {
 	utilruntime.Must(batchv1.AddToScheme(scheme))
 	utilruntime.Must(networkingv1.AddToScheme(scheme))
 	utilruntime.Must(autoscalingv2.AddToScheme(scheme))
+	utilruntime.Must(rbacv1.AddToScheme(scheme))
 	// Gateway API — registered separately, non-fatal if CRDs not installed
 	if err := gatewayv1.Install(scheme); err != nil {
 		log.Printf("warning: gateway API scheme registration failed (CRDs may not be installed): %v", err)
