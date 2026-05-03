@@ -238,7 +238,9 @@ type ServiceSpec struct {
 	ExternalTrafficPolicy    string            `json:"externalTrafficPolicy,omitempty"`
 	SessionAffinity          string            `json:"sessionAffinity,omitempty"`
 	PublishNotReadyAddresses bool              `json:"publishNotReadyAddresses,omitempty"`
-	Ports                    []ServicePortSpec `json:"ports,omitempty"`
+	Ports                    []ServicePortSpec  `json:"ports,omitempty"`
+	// PortRanges expands a range of ports into individual service ports
+	PortRanges               []PortRangeSpec    `json:"portRanges,omitempty"`
 }
 
 type ServicePortSpec struct {
@@ -247,6 +249,20 @@ type ServicePortSpec struct {
 	TargetPort int32  `json:"targetPort,omitempty"`
 	NodePort   int32  `json:"nodePort,omitempty"`
 	Protocol   string `json:"protocol,omitempty"`
+}
+
+// PortRangeSpec expands a range of ports into individual service ports.
+// e.g. start: 50000, end: 60000, protocol: UDP
+type PortRangeSpec struct {
+	// Start of the port range (inclusive)
+	Start int32 `json:"start"`
+	// End of the port range (inclusive)
+	End int32 `json:"end"`
+	// Protocol: TCP or UDP. Default: UDP
+	Protocol string `json:"protocol,omitempty"`
+	// TargetPortOffset allows the target port to differ from the service port.
+	// target = port + offset. Default: 0 (same as service port)
+	TargetPortOffset int32 `json:"targetPortOffset,omitempty"`
 }
 
 // ----------------------------------------------------------------

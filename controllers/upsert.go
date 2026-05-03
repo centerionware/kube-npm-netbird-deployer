@@ -191,6 +191,12 @@ func portsSpecEqual(a, b []corev1.ServicePort) bool {
 	if len(a) != len(b) {
 		return false
 	}
+	// For large port sets (e.g. expanded ranges) compare first, last, and count only
+	if len(a) > 20 {
+		return a[0].Port == b[0].Port &&
+			a[len(a)-1].Port == b[len(b)-1].Port &&
+			a[0].Protocol == b[0].Protocol
+	}
 	for i := range a {
 		if a[i].Port != b[i].Port ||
 			a[i].Protocol != b[i].Protocol ||

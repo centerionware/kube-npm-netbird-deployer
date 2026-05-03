@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	v1 "kube-deploy/api/v1alpha1"
 
@@ -184,28 +186,48 @@ func buildService(app *v1.App, defaultPort int32) corev1.Service {
 	spec := app.Spec.Service
 
 	var svcPorts []corev1.ServicePort
-	if len(spec.Ports) > 0 {
-		for _, p := range spec.Ports {
-			proto := corev1.ProtocolTCP
-			if p.Protocol == "UDP" {
-				proto = corev1.ProtocolUDP
-			}
-			targetPort := p.TargetPort
-			if targetPort == 0 {
-				targetPort = p.Port
-			}
-			sp := corev1.ServicePort{
-				Name:       p.Name,
-				Port:       p.Port,
+
+	// Explicit named ports
+	for _, p := range spec.Ports {
+		proto := corev1.ProtocolTCP
+		if p.Protocol == "UDP" {
+			proto = corev1.ProtocolUDP
+		}
+		targetPort := p.TargetPort
+		if targetPort == 0 {
+			targetPort = p.Port
+		}
+		sp := corev1.ServicePort{
+			Name:       p.Name,
+			Port:       p.Port,
+			TargetPort: intstr.FromInt32(targetPort),
+			Protocol:   proto,
+		}
+		if p.NodePort != 0 {
+			sp.NodePort = p.NodePort
+		}
+		svcPorts = append(svcPorts, sp)
+	}
+
+	// Port ranges — expanded into individual ports
+	for _, r := range spec.PortRanges {
+		proto := corev1.ProtocolUDP
+		if r.Protocol == "TCP" {
+			proto = corev1.ProtocolTCP
+		}
+		for port := r.Start; port <= r.End; port++ {
+			targetPort := port + r.TargetPortOffset
+			svcPorts = append(svcPorts, corev1.ServicePort{
+				Name:       fmt.Sprintf("%s-%d", strings.ToLower(string(proto)), port),
+				Port:       port,
 				TargetPort: intstr.FromInt32(targetPort),
 				Protocol:   proto,
-			}
-			if p.NodePort != 0 {
-				sp.NodePort = p.NodePort
-			}
-			svcPorts = append(svcPorts, sp)
+			})
 		}
-	} else {
+	}
+
+	// Default single port if nothing specified
+	if len(svcPorts) == 0 {
 		svcPorts = []corev1.ServicePort{
 			{
 				Port:       defaultPort,

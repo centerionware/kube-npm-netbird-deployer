@@ -273,6 +273,28 @@ spec:
                             type: string
                             enum: ["TCP", "UDP"]
                             default: "TCP"
+                    portRanges:
+                      type: array
+                      description: "Expand a range of ports into individual service ports"
+                      items:
+                        type: object
+                        required: ["start", "end"]
+                        properties:
+                          start:
+                            type: integer
+                            description: "Start of port range (inclusive)"
+                          end:
+                            type: integer
+                            description: "End of port range (inclusive)"
+                          protocol:
+                            type: string
+                            enum: ["TCP", "UDP"]
+                            default: "UDP"
+                            description: "Protocol for all ports in range. Default: UDP"
+                          targetPortOffset:
+                            type: integer
+                            default: 0
+                            description: "Offset added to port number to get targetPort. Default: 0"
                 ingress:
                   type: object
                   properties:
@@ -576,6 +598,28 @@ spec:
                             type: string
                             enum: ["TCP", "UDP"]
                             default: "TCP"
+                    portRanges:
+                      type: array
+                      description: "Expand a range of ports into individual service ports"
+                      items:
+                        type: object
+                        required: ["start", "end"]
+                        properties:
+                          start:
+                            type: integer
+                            description: "Start of port range (inclusive)"
+                          end:
+                            type: integer
+                            description: "End of port range (inclusive)"
+                          protocol:
+                            type: string
+                            enum: ["TCP", "UDP"]
+                            default: "UDP"
+                            description: "Protocol for all ports in range. Default: UDP"
+                          targetPortOffset:
+                            type: integer
+                            default: 0
+                            description: "Offset added to port number to get targetPort. Default: 0"
                 ingress:
                   type: object
                   properties:

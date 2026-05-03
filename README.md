@@ -278,7 +278,27 @@ build:
     RUN npm ci
     CMD ["node", "server.js"]
 ```
+## Service Port Ranges
 
+Kubernetes doesn't naturally support port ranges, but sometimes it may be useful to do so (eg: livekit)
+
+```
+service:
+  ports:
+    - port: 7880
+      targetPort: 7880
+      protocol: TCP
+    - port: 7881
+      targetPort: 7881
+      protocol: TCP
+  portRanges:
+    - start: 50000
+      end: 60000
+      protocol: UDP
+  annotations:
+    netbird.io/expose: "true"
+    netbird.io/groups: "media"
+```
 ## Use of AI Disclaimer
 
 ChatGPT was originally used to generate the skeleton of this project. Claude Sonnet 4.6 was used to get it into it's current state. 
